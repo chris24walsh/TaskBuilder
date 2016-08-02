@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title></title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+
+        <!--<link rel="stylesheet" href="css/normalize.css">
+        <link rel="stylesheet" href="css/main.css">
+        <script src="js/vendor/modernizr-2.6.2.min.js"></script>-->
+		<script src="http://www.parsecdn.com/js/parse-1.2.19.min.js"></script>
+		<style>
+			body {padding-top:1em; padding-left:1em; }
+		</style>
+    </head>
+    <body>
+        <!--[if lt IE 7]>
+            <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        <![endif]-->
+
+        <!-- Add your site or application content here -->
+        <!--<button style='position:relative; top:0; left:20;' onclick='signUp();'>Sign Up</button>
+		<button style='position:relative; top:0; left:10;' onclick='logIn();'>Log In</button>
+		<button style='position:relative; top:0; left:0;' onclick='logOut();'>Log Out</button>-->
+		<button id="authorize-button" style='position:absolute; top:0; right:0; visibility:hidden' >Log In</button>
+		<!--<p  id='loggedInText' style='position:absolute; top:0; right:0; padding-right:15em'></p>-->
+		<div id="content" style='position:absolute; top:0; right:0; padding-right:1em'></div>
+		
+		</p></p></p>
+		<p><h1 style='text-align:center'>TaskBuilder</h1></p>
+		<p><h2 style='text-align:center'>Input your new task below</h2></p>
+		
+		<p style='text-align:center'>Name of task: <input type='text' id='taskName'></input></p>
+		<p style='text-align:center'>Due date(optional): <input type='text' id='dueDate'></input></p>
+		<p style='text-align:center'><input type='submit' disabled onclick="submitData();" id='submitButton' value='Submit'></input></p>
+
+		
+		
+		
+		<script>
+			
+			//Initialisation code for Parse
+			Parse.initialize( 'l4mr7WRk7vbeHdl076bRF3rF2SzkQQty0NSDMkhR', 'lgzAJ9Zk83lNh002rDayNRviiFRgUG50SJ9o2dum' );
+			
+			//Google API
+			var clientId = '123117644460-5i5kqr2f7ishqu6u0e6am7l3e9flut70.apps.googleusercontent.com';
+			var apiKey = 'AIzaSyBrURwQdaQorGzR0uCgNg58t_Cf5fmGOLI';
+			var scopes = 'https://www.googleapis.com/auth/plus.me';
+
+			// Use a button to handle authentication the first time.
+			function handleClientLoad() {
+				gapi.client.setApiKey(apiKey);
+				window.setTimeout(checkAuth,1);
+			}
+
+			function checkAuth() {
+				gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: true}, handleAuthResult);
+			}
+
+			function handleAuthResult(authResult) {
+				var authorizeButton = document.getElementById('authorize-button');
+				if (authResult && !authResult.error) {
+					authorizeButton.style.visibility = 'hidden';
+					makeApiCall();
+				} else {
+					authorizeButton.style.visibility = '';
+					authorizeButton.onclick = handleAuthClick;
+				}
+			}
+
+			function handleAuthClick(event) {
+				gapi.auth.authorize({client_id: clientId, scope: scopes, immediate: false}, handleAuthResult);
+				return false;
+			}
+
+			// Load the API and make an API call.  Display the results on the screen.
+			function makeApiCall() {
+				gapi.client.load('plus', 'v1', function() {
+					var request = gapi.client.plus.people.get({
+						'userId': 'me'
+					});
+					request.execute(function(resp) {
+						document.getElementById('submitButton').disabled = false;
+						var heading = document.createElement('h4');
+						var image = document.createElement('img');
+						image.src = resp.image.url;
+						heading.appendChild(image);
+						heading.appendChild(document.createTextNode(resp.displayName));
+
+						document.getElementById('content').appendChild(heading);
+					});
+				});
+			}
+			
+			//////////////////////////////
+			
+			if (Parse.User.current()){
+				//showUser();
+				alert('Welcome ' + Parse.User.current().get('username'));
+			}
+			
+			function signUp() {
+				var user = new Parse.User();
+				alert("Signing up");
+				var username = prompt('Enter your username: ');
+				var password = prompt('Password: ');
+				user.set('username', username);
+				user.set("password", password);
+				var email = prompt("Please provide an email address: ");
+				user.set("email", email);
+				user.signUp(null, {
+				  success: function(user) {
+					alert("You are logged in. Welcome " + username);
+					showUser();
+				  },
+				  error: function(user, error) {
+					// Show the error message somewhere and let the user try again.
+					alert("Error: " + error.code + " " + error.message);
+				  }
+				});
+			}
+			
+			function logIn() {
+				var username = prompt('Enter your username: ');
+				var password = prompt('Password: ');
+				Parse.User.logIn(username, password, {}).then(function(success) {
+					showUser();
+					alert("You are logged in. Welcome " + username);
+				}, function(error) {
+					var conf = confirm("Username and password not recognized. Do you want to sign up?");
+					if (conf) signUp();
+				});
+			}
+					
+			function logOut() {
+				Parse.User.logOut();
+				alert("You have logged out");
+				clearUser();
+			}
+			
+			function submitData() {
+				if (Parse.User.current()) {
+					var taskName = document.getElementById('taskName').value;
+					var dueDate = document.getElementById('dueDate').value;
+					if (taskName == '') alert('You must enter a name for the task');
+					else {
+						alert('Task submitted');
+						if (dueDate == "") mail(taskName);
+						else addCalendar(taskName, dueDate);
+					}
+				}
+				else {
+					alert("You must login to use this app");
+					logIn();
+				}
+			}
+			
+			function showUser() {
+				document.getElementById('loggedInText').innerHTML = 'Logged in as: ' + Parse.User.current().get('username');
+			}
+			
+			function clearUser() {
+				document.getElementById('loggedInText').innerHTML = '';
+			}
+			
+			function mail(taskName) {
+				
+				Parse.Cloud.run('sendMail', {email: Parse.User.current().get('email'), message: taskName}, {
+					success: function(success) {
+						//alert("Email sent");
+					}, error: function(error) {
+						//alert('Failed to send email');
+					}
+				});
+			}
+			
+			function addCalendar(taskName, dueDate) {
+				gapi.client.load('plus', 'v1', function() {
+					var request = gapi.client.plus.people.get({
+						'userId': 'me'
+					});
+					request.execute(function(resp) {
+						//Add event to calendar
+					});
+				});
+			}
+			
+		</script>
+		<!--//////////////-->
+
+		
+		<script src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script>
+        <!--<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script>window.jQuery || document.write('<script src="js/vendor/jquery-1.10.2.min.js"><\/script>')</script>
+        <script src="js/plugins.js"></script>
+        <script src="js/main.js"></script>-->
+
+        <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->
+        <!--<script>
+            (function(b,o,i,l,e,r){b.GoogleAnalyticsObject=l;b[l]||(b[l]=
+            function(){(b[l].q=b[l].q||[]).push(arguments)});b[l].l=+new Date;
+            e=o.createElement(i);r=o.getElementsByTagName(i)[0];
+            e.src='//www.google-analytics.com/analytics.js';
+            r.parentNode.insertBefore(e,r)}(window,document,'script','ga'));
+            ga('create','UA-XXXXX-X');ga('send','pageview');
+        </script>-->
+    </body>
+</html>

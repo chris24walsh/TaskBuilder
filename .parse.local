@@ -1,0 +1,10 @@
+{
+  "applications": {
+    "TaskBuilder": {
+      "applicationId": "l4mr7WRk7vbeHdl076bRF3rF2SzkQQty0NSDMkhR"
+    },
+    "_default": {
+      "link": "TaskBuilder"
+    }
+  }
+}
